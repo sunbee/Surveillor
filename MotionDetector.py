@@ -41,7 +41,7 @@ class MotionDetector:
         while (toc - tic) < intervalsec:
             toc = time.time()
         im_two = self.take_motion_snap()
-        return np.subtract(im_two, im_one)
+        return (im_one, im_two, np.subtract(im_two, im_one))
 
     def _threshold_difference(self, imdiff):
         imthreshold = self.threshold
@@ -131,12 +131,35 @@ class MotionDetector:
         return result
 
     def sense(self):
-        imdiff = self._take_two_motion()
+        imone, imtwo, imdiff = self._take_two_motion()
         imlevel = self._threshold_difference(imdiff=imdiff)
         imbnw = self._erode_dilate(snap=Image.fromarray(imlevel))
         mask = self.find_connected_components(imbnw=imbnw)
 
-        return (imdiff, imlevel, imbnw, mask)
+        if self.showme:
+            outline = (3, 2)
+            labels = np.array(["RAW FOOTAGE #1", "RAW FOOTAGE #2", "DIFFERENCE", "LEVEL", "B&W MASK", "REGIONS"])
+            labels = labels.reshape(outline)
+            labels
+
+            font = {'family': 'serif', 'color': 'red', 'size': 18}
+
+            _, axarray = plt.subplots(outline[0], outline[1], figsize=(12, 12))
+            for idx, x in np.ndenumerate(labels):
+                axarray[idx].set_xticks([])
+                axarray[idx].set_yticks([])
+                axarray[idx].set_title(labels[idx], fontdict=font)
+
+            axarray[0, 0].imshow(imone)
+            axarray[0, 1].imshow(imtwo)
+            axarray[1, 0].imshow(imdiff)
+            axarray[1, 1].imshow(imlevel)
+            axarray[2, 0].imshow(imbnw)
+            axarray[2, 1].imshow(mask)
+            plt.show()
+
+        return (imone, imtwo, imdiff, imlevel, imbnw, mask)
+
 
     
 
