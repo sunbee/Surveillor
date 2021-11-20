@@ -7,18 +7,18 @@ import time
 import os
 
 class MotionDetector:
-    def __init__(self, width, height, delta, imthreshold, regionsize, showme=False):
+    def __init__(self, width=300, height=300, delta=1, imthreshold=55, regionsize=90, showme=False):
         self.width = width
         self.height = height
         self.delta = delta
         self.threshold = imthreshold
         self.size = regionsize
         self.regions = {}
-        self.candidates = {}
+        self.results = {}
         self.showme = showme
 
     def __str__(self) -> str:
-        pass
+        1
 
     def _take_motion_snap(self):
         width = self.width
@@ -35,12 +35,12 @@ class MotionDetector:
 
     def _take_two_motion(self):
         intervalsec = self.delta
-        im_one = self.take_motion_snap()
+        im_one = self._take_motion_snap()
         tic = time.time()
         toc = tic
         while (toc - tic) < intervalsec:
             toc = time.time()
-        im_two = self.take_motion_snap()
+        im_two = self._take_motion_snap()
         return (im_one, im_two, np.subtract(im_two, im_one))
 
     def _threshold_difference(self, imdiff):
@@ -118,23 +118,23 @@ class MotionDetector:
                 else:
                     connected_components[x] = connected_components.get(x, 0) + 1
         
-        self.candidates = connected_components
+        self.regions = connected_components
         return mask
         
-    def analyze_connect_components(self):
-        regions = self.candidates
+    def _analyze_regions(self):
+        regions = self.regions
         size = self.size 
-        result = {label: regions[label] \
+        results = {label: regions[label] \
             for label in sorted(regions, key=regions.get, reverse=True) \
             if regions[label] > size}
-        self.regions = regions
-        return result
+        self.results = results
 
     def sense(self):
         imone, imtwo, imdiff = self._take_two_motion()
         imlevel = self._threshold_difference(imdiff=imdiff)
         imbnw = self._erode_dilate(snap=Image.fromarray(imlevel))
         mask = self.find_connected_components(imbnw=imbnw)
+        self._analyze_regions()
 
         if self.showme:
             outline = (3, 2)
@@ -158,7 +158,7 @@ class MotionDetector:
             axarray[2, 1].imshow(mask)
             plt.show()
 
-        return (imone, imtwo, imdiff, imlevel, imbnw, mask)
+        return (imone, imtwo, imdiff, imlevel, imbnw, mask, self.results)
 
 
     
