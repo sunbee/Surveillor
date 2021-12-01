@@ -1,13 +1,14 @@
 from tflite_runtime.interpreter import Interpreter
-from PIL import Image
+from PIL import Image, ImageDraw, ImageFont
 import numpy as np
 import time
 import os
 from picamera import PiCamera
 from io import BytesIO
 import matplotlib.pyplot as plt
+from abc import ABC, abstractmethod
 
-class ObjectDetector:
+class BaseCNN:
     def __init__(self, path2labels, path2model) -> None:
         self.path2labels = path2labels
         self.path2model = path2model
@@ -76,7 +77,7 @@ class ObjectDetector:
         USAGE MANUAL: STEP 2 Feed the image from picamera to the convolutional neural network.
         
         Args:
-        - show (boolean) is the flag tp render the snapshot FOR USE IN DEBUGGING
+        - show (boolean) is the flag to render the snapshot FOR USE IN DEBUGGING
         Returns None
 
         """
@@ -95,21 +96,40 @@ class ObjectDetector:
         """
 
         USAGE MANUAL: STEP 3 Inovke the interpreter and detect objecs in image.
-        
+
         Args: None
         Returns None
 
         """
         self._interpreter.invoke()
 
-    def _get_output_labels(self, topk):
+    @abstractmethod
+    def _get_output_labels(self):
         """
         
-        USAGE MANUAL: STEP 4 Report the objects detected in the image 
-        with probability of success.
-        
+        USAGE MANUAL: STEPS 4 Report the outcome depending on the cnn model used.
+
+        """
+        pass
+
+    @abstractmethod
+    def detect_objects(self):
+        """
+
+        USAGE MANUAL: STEPS 1-4 Take a snap and return the detected objects.
+
+        """
+        pass
+
+class MobileNet(BaseCNN):
+    def __init__(self, path2labels, path2model) -> None:
+        super().__init__(path2labels, path2model)
+
+    def _get_output_labels(self, topk):
+        """
+
         Args
-        - topk (int) is the desired number of top-ranking matches.
+        - topk (int) is the number of top-ranking matches desired.
         Returns a list of tuples, each with the class label and success probability,
         for the top k matches.
 
@@ -121,16 +141,14 @@ class ObjectDetector:
         ordered = np.argpartition(-output, topk)
         return [(self._labels[i], output[i]) for i in ordered[:topk]]
 
-    def classify_snap(self, topk=12):
+    def classify_snap(self, topk=5):
         """
-
-        USAGE MANUAL: STEPS 1-4 Takes a snap and returns the detected objects.
 
         Args
         - topk (int) is the desired number of top-ranking matches.
         Returns a list of tuples, each containing the class label and success probability,
         for the top-ranking matches.
-
+        
         """
         self._complete_initialization() if not self._interpreter else None
         self._set_input_image()
@@ -139,7 +157,11 @@ class ObjectDetector:
 
         return result
 
+class Coco(BaseCNN):
+    def __init__(self, path2labels, path2model) -> None:
+        super().__init__(path2labels, path2model)
 
-
-
-
+    def _set_labels(self):
+        super()._set_labels()
+        if self._labels[0] == '???':
+            del(self._labels[0])
