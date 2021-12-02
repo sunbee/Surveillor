@@ -117,7 +117,7 @@ class BaseCNN:
         pass
 
     @abstractmethod
-    def detect_objects(self):
+    def classify_snap(self):
         """
 
         USAGE MANUAL: STEPS 1-4 Take a snap and return the detected objects.
