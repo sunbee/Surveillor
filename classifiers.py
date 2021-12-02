@@ -1,3 +1,4 @@
+from types import new_class
 from tflite_runtime.interpreter import Interpreter
 from PIL import Image, ImageDraw, ImageFont
 import numpy as np
@@ -12,10 +13,11 @@ class BaseCNN:
     def __init__(self, path2labels, path2model) -> None:
         self.path2labels = path2labels
         self.path2model = path2model
-        self._intepreter = None
+        self._interpreter = None
         self._labels = None
         self._input_details = None
         self._output_details = None
+        self._snap = None
 
     def _set_labels(self):
         with open(self.path2labels) as text_labels:
@@ -33,6 +35,9 @@ class BaseCNN:
     def _set_output_details(self):
         self._output_details = self._interpreter.get_output_details()
 
+    def _set_snap(self):
+        self._snap = self._take_snap()
+
     def complete_initialization(self):
         """
         * MUST CALL BEFORE USE OF OBJECT FOR IMAGE CLASSIFICATION *
@@ -49,8 +54,14 @@ class BaseCNN:
         self._set_interpreter()
         self._set_input_details()
         self._set_output_details()
+        self._set_snap()
 
-    def take_snap(self, width, height):
+    def _take_snap(self):
+        height = self._input_details[0]["shape"][1]
+        width  = self._input_details[0]["shape"][2]
+
+        print("Got size of input image as {} x {}.".format(height, width))
+
         with PiCamera() as Eye:
             Eye.rotation = 180
             Eye.resolution = (512, 512)
@@ -60,18 +71,18 @@ class BaseCNN:
                 snap = Image.open(Stream).convert('RGB').resize((height, width))
                 return snap
 
-    def showsnap(self, snap, title='', label=''):
+    def show_snap(self, title='', label=''):
         # Show in notebook
         font = {'family': 'serif', 'color': 'red', 'size': 18}
-        plt.imshow(snap)
+        plt.imshow(self._snap)
         plt.xticks([])
         plt.yticks([])
         plt.title(title, fontdict=font)
         if not label:
-            plt.xlabel(" x ".join("{}".format(i) for i in np.array(snap).shape), fontdict=font)
+            plt.xlabel(" x ".join("{}".format(i) for i in np.array(self._snap).shape), fontdict=font)
         plt.show()
 
-    def _set_input_image(self, show=False):
+    def _set_input_image(self, new=False):
         """
         
         USAGE MANUAL: STEP 2 Feed the image from picamera to the convolutional neural network.
@@ -81,15 +92,8 @@ class BaseCNN:
         Returns None
 
         """
-        height = self._input_details[0]["shape"][1]
-        width  = self._input_details[0]["shape"][2]
-
-        print("Got size of input image as {} x {} in {}-D.".format(height, width, len(self._input_details[0]["shape"])))
-
-        snap = self.take_snap(width, height)
-        self.showsnap(snap) if show else None
-
-        im2classify = np.expand_dims(snap, axis=0)
+        self._set_snap() if new else None
+        im2classify = np.expand_dims(self._snap, axis=0)
         self._interpreter.set_tensor(self._input_details[0]["index"], im2classify)
 
     def _predict(self):
@@ -141,7 +145,7 @@ class MobileNet(BaseCNN):
         ordered = np.argpartition(-output, topk)
         return [(self._labels[i], output[i]) for i in ordered[:topk]]
 
-    def classify_snap(self, topk=5):
+    def classify_snap(self, new=False, topk=5):
         """
 
         Args
@@ -150,18 +154,70 @@ class MobileNet(BaseCNN):
         for the top-ranking matches.
         
         """
-        self._complete_initialization() if not self._interpreter else None
-        self._set_input_image()
+        self.complete_initialization() if not self._interpreter else None
+        self._set_input_image(new=new)
         self._predict()
-        result = self._get_output_labels(topk)
+        result = self._get_output_labels(topk=topk)
 
         return result
 
 class Coco(BaseCNN):
     def __init__(self, path2labels, path2model) -> None:
         super().__init__(path2labels, path2model)
+        _snap = None
 
     def _set_labels(self):
         super()._set_labels()
         if self._labels[0] == '???':
             del(self._labels[0])
+
+    def _get_output_labels(self, threshold=0.45):
+        boxes = self._interpreter.get_tensor(self._output_details[0]['index'])[0] # Bounding box coordinates of detected objects
+        classes = self._interpreter.get_tensor(self._output_details[1]['index'])[0] # Class index of detected objects
+        scores = self._interpreter.get_tensor(self._output_details[2]['index'])[0] # Success probabilities of detected objects
+
+        results = [(self._labels[int(classes[i])], "{}%".format(int(scores[i]*100))) for i in range(len(scores)) if scores[i] > threshold]
+        print("Found {}".format(results if (len(results)>0) else "NONE!"))
+
+        snap = self._snap.copy()
+        snapbb = ImageDraw.Draw(snap)
+        height = self._input_details[0]["shape"][1]
+        width  = self._input_details[0]["shape"][2]
+
+        for i in range(len(scores)):
+            if ((scores[i] > threshold) and (scores[i] <= 1.0)):
+
+                # Get the bounding box for ith object and draw it
+                # Calculate the coordinates in pixel, clipping boxes to image perimeter where required.
+                ymin = int(max(1, boxes[i][0] * height)) # Clip to 1 px from edge when required
+                xmin = int(max(1, boxes[i][1] * width))
+                ymax = int(min(width-1, boxes[i][2] * height))
+                xmax = int(min(height-1, boxes[i][3] * width))
+                bbox = [(xmin, ymin), (xmax, ymax)]
+                print("TL: {:.2f}, {:.2f} BR: {:.2f}, {:.2f}.".format(xmin, ymin, xmax, ymax))
+                snapbb.rectangle(bbox, outline="yellow")
+
+                # Make and add labels
+                font = ImageFont.truetype(r'./Assets/arial.ttf', 12)
+                tloc = (xmin, ymin)
+                title = "{}: {}%".format(self._labels[int(classes[i])], int(scores[i]*100))
+                snapbb.text(tloc, title, fill="red", font=font, align="left")
+
+        snap.show()
+        return results
+
+    def classify_snap(self, new=False, threshold=0.45):
+        """
+
+        Args
+        - threshold (float) is the cut-off probability of successful detection.
+        Returns a list of tuples, each containing the class label and success probability,
+        for the top-ranking matches.
+        
+        """
+        self.complete_initialization() if not self._interpreter else None
+        self._set_input_image(new=new)
+        self._predict()
+        result = self._get_output_labels(threshold=threshold)
+
+        return result
