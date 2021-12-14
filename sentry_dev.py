@@ -6,6 +6,18 @@ import io
 from PIL import Image
 import picamera
 
+from MotionDetector import MotionDetector
+Sur = MotionDetector(showme=False)
+
+flag_motion = False
+flag_presence = False
+flag_intrusion = flag_motion and flag_presence
+
+message_location = "Basement Vantage Point"
+message_motion = "SENSED MOTION"
+message_presence = "SENSED PRESENCE"
+message_intrusion = "ALERT!!! POSSIBLE INTRUSION!!!"
+
 stream = io.BytesIO()
 '''
 with picamera.PiCamera() as camera:
@@ -21,10 +33,6 @@ im2ship = base64.b64encode(imnbytes)
 snap = Image.open(stream)
 snap.show()
 '''
-
-myCam = picamera.PiCamera()
-myCam.rotation = 180
-myCam.resolution = (300, 300)
 
 client = mqtt.Client("Sentry")
 
@@ -72,17 +80,38 @@ client.subscribe("Surveillance/MainDoor")
 tic = time.time()
 delta = 30  # Pause for this duration (in seconds) between updates
 while(True):
+    # Sense motion
+    base, compare, diff, level, clean, mask, res = Sur.sense()
+    flag_motion = True if sum(res.values()) > 4500 else False
+
+    # Sense presence
+
+
+    # Set alert
+    subject_line = ''
+    if (flag_motion and flag_presence):
+        subject_line = message_location + " " + message_intrusion
+    elif (flag_motion):
+        subject_line = message_location + " " + message_motion
+    elif (flag_presence):
+        subject_line = message_location + " " + message_presence
+    else:
+        subject_line = message_location
+        
     toc = time.time()
-    if ((toc - tic) > delta):
+    if ((toc - tic) > delta) or flag_motion or flag_presence:
         '''
         Send an image every delta seconds.
         '''
-        myCam.capture(stream, format="jpeg")
-        stream.seek(0)
-        imnbytes = stream.getvalue()
-        im2ship = base64.b64encode(imnbytes)
-        payload = json.dumps({"From": "RPi3", 
-                        "Subject": "Basement Vantage Point", 
+        with picamera.PiCamera() as myCam:
+            myCam.rotation = 180
+            myCam.resolution = (300, 300)
+            myCam.capture(stream, format="jpeg")
+            stream.seek(0)
+            imnbytes = stream.getvalue()
+            im2ship = base64.b64encode(imnbytes)
+            payload = json.dumps({"From": "RPi3", 
+                        "Subject": subject_line, 
                         "Message": im2ship.decode('ascii')})  # im_encoded
         tic = toc
         client.publish("Surveillance/MainDoor", payload)
