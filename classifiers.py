@@ -8,16 +8,17 @@ from picamera import PiCamera
 from io import BytesIO
 import matplotlib.pyplot as plt
 from abc import ABC, abstractmethod
+from classifyable import *
 
 class BaseCNN:
-    def __init__(self, path2labels, path2model) -> None:
+    def __init__(self, path2labels, path2model, classifyable_image) -> None:
         self.path2labels = path2labels
         self.path2model = path2model
         self._interpreter = None
         self._labels = None
         self._input_details = None
         self._output_details = None
-        self._snap = None
+        self._classifyable = classifyable_image
 
     def _set_labels(self):
         with open(self.path2labels) as text_labels:
@@ -35,9 +36,6 @@ class BaseCNN:
     def _set_output_details(self):
         self._output_details = self._interpreter.get_output_details()
 
-    def _set_snap(self):
-        self._snap = self._take_snap()
-
     def complete_initialization(self):
         """
         * MUST CALL BEFORE USE OF OBJECT FOR IMAGE CLASSIFICATION *
@@ -54,33 +52,6 @@ class BaseCNN:
         self._set_interpreter()
         self._set_input_details()
         self._set_output_details()
-        self._set_snap()
-
-    def _take_snap(self):
-        height = self._input_details[0]["shape"][1]
-        width  = self._input_details[0]["shape"][2]
-
-        print("Got size of input image as {} x {}.".format(height, width))
-
-        with PiCamera() as Eye:
-            Eye.rotation = 180
-            Eye.resolution = (512, 512)
-            with BytesIO() as Stream:
-                Eye.capture(Stream, 'jpeg')
-                Stream.seek(0)
-                snap = Image.open(Stream).convert('RGB').resize((height, width))
-                return snap
-
-    def show_snap(self, title='', label=''):
-        # Show in notebook
-        font = {'family': 'serif', 'color': 'red', 'size': 18}
-        plt.imshow(self._snap)
-        plt.xticks([])
-        plt.yticks([])
-        plt.title(title, fontdict=font)
-        if not label:
-            plt.xlabel(" x ".join("{}".format(i) for i in np.array(self._snap).shape), fontdict=font)
-        plt.show()
 
     def _set_input_image(self, new=False):
         """
@@ -88,12 +59,15 @@ class BaseCNN:
         USAGE MANUAL: STEP 2 Feed the image from picamera to the convolutional neural network.
         
         Args:
-        - show (boolean) is the flag to render the snapshot FOR USE IN DEBUGGING
+        - new (boolean) is the flag to request a fresh snap from classifyable
         Returns None
 
         """
-        self._set_snap() if new else None
-        im2classify = np.expand_dims(self._snap, axis=0)
+
+        height = self._input_details[0]["shape"][1]
+        width  = self._input_details[0]["shape"][2]
+        snap = self._classifyable.resize((width, height))
+        im2classify = np.expand_dims(snap, axis=0)
         self._interpreter.set_tensor(self._input_details[0]["index"], im2classify)
 
     def _predict(self):
@@ -126,8 +100,8 @@ class BaseCNN:
         pass
 
 class MobileNet(BaseCNN):
-    def __init__(self, path2labels, path2model) -> None:
-        super().__init__(path2labels, path2model)
+    def __init__(self, path2labels, path2model, classifyable_image) -> None:
+        super().__init__(path2labels, path2model, classifyable_image)
 
     def _get_output_labels(self, topk):
         """
@@ -162,8 +136,8 @@ class MobileNet(BaseCNN):
         return result
 
 class Coco(BaseCNN):
-    def __init__(self, path2labels, path2model) -> None:
-        super().__init__(path2labels, path2model)
+    def __init__(self, path2labels, path2model, classifyable_image) -> None:
+        super().__init__(path2labels, path2model, classifyable_image)
         _snap = None
 
     def _set_labels(self):
@@ -179,10 +153,10 @@ class Coco(BaseCNN):
         results = [(self._labels[int(classes[i])], "{}%".format(int(scores[i]*100))) for i in range(len(scores)) if scores[i] > threshold]
         print("Found {}".format(results if (len(results)>0) else "NONE!"))
 
-        snap = self._snap.copy()
-        snapbb = ImageDraw.Draw(snap)
         height = self._input_details[0]["shape"][1]
         width  = self._input_details[0]["shape"][2]
+        snap = self._classifyable.resize((width, height)).copy()
+        snapbb = ImageDraw.Draw(snap)
 
         for i in range(len(scores)):
             if ((scores[i] > threshold) and (scores[i] <= 1.0)):
@@ -204,7 +178,7 @@ class Coco(BaseCNN):
                 snapbb.text(tloc, title, fill="red", font=font, align="left")
 
         snap.show()
-        return results
+        return snap, results
 
     def classify_snap(self, new=False, threshold=0.45):
         """
@@ -218,6 +192,4 @@ class Coco(BaseCNN):
         self.complete_initialization() if not self._interpreter else None
         self._set_input_image(new=new)
         self._predict()
-        result = self._get_output_labels(threshold=threshold)
-
-        return result
+        return self._get_output_labels(threshold=threshold)
