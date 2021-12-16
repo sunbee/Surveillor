@@ -132,15 +132,15 @@ class MotionDetector:
                 axarray[idx].set_yticks([])
                 axarray[idx].set_title(labels[idx], fontdict=font)
 
-            axarray[0, 0].imshow(self.base)
-            axarray[0, 1].imshow(self.compare)
+            axarray[0, 0].imshow(self.base.snap)
+            axarray[0, 1].imshow(self.compare.snap)
             axarray[1, 0].imshow(imdiff)
             axarray[1, 1].imshow(imlevel)
             axarray[2, 0].imshow(imbnw)
             axarray[2, 1].imshow(mask)
             plt.show()
 
-        return (self.base, self.compare, imdiff, imlevel, imbnw, mask, self.results)
+        return (self.base.snap, self.compare.snap, imdiff, imlevel, imbnw, mask, self.results)
 
 
     
