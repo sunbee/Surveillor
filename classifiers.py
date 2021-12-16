@@ -155,8 +155,9 @@ class Coco(BaseCNN):
 
         height = self._input_details[0]["shape"][1]
         width  = self._input_details[0]["shape"][2]
-        snap = self._classifyable.resize((width, height)).copy()
-        snapbb = ImageDraw.Draw(snap)
+        snap_in = self._classifyable.resize((width, height))
+        snap_out = snap_in.copy()
+        snapbb = ImageDraw.Draw(snap_out)
 
         for i in range(len(scores)):
             if ((scores[i] > threshold) and (scores[i] <= 1.0)):
@@ -177,8 +178,8 @@ class Coco(BaseCNN):
                 title = "{}: {}%".format(self._labels[int(classes[i])], int(scores[i]*100))
                 snapbb.text(tloc, title, fill="red", font=font, align="left")
 
-        snap.show()
-        return snap, results
+        snap_out.show()
+        return snap_in, snap_out, results
 
     def classify_snap(self, new=False, threshold=0.45):
         """
