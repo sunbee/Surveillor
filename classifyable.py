@@ -39,8 +39,10 @@ class Classifyable:
     def resize(self, resolution):
         return self.snap.resize(resolution) # (width, height)
 
-    def tobase64enc(self):
-        return base64.b64encode(self.snap.tobytes())
+    def tobase64enc(self, resolution=(224, 224)):
+        buffered_bytes = BytesIO()
+        self.snap.resize(resolution).save(buffered_bytes, 'jpeg')
+        return base64.b64encode(buffered_bytes.getvalue())
 
     def toarray(self):
         return np.array(self.snap) 

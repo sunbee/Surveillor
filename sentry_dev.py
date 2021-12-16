@@ -6,36 +6,44 @@ import io
 from PIL import Image
 import picamera
 
+from classifiers import *
+from classifyable import *
 from MotionDetector import MotionDetector
-Sur = MotionDetector(showme=False)
 
 flag_motion = False
 flag_presence = False
 flag_intrusion = flag_motion and flag_presence
 
-message_location = "Basement Vantage Point"
-message_motion = "SENSED MOTION"
-message_presence = "SENSED PRESENCE"
-message_intrusion = "ALERT!!! POSSIBLE INTRUSION!!!"
-
-stream = io.BytesIO()
-'''
-with picamera.PiCamera() as camera:
-    camera.rotation = 180
-    camera.resolution = (300, 300)
-    camera.start_preview()
-    time.sleep(2)
-    camera.capture(stream, format="jpeg")
-
-stream.seek(0)
-imnbytes = stream.getvalue()
-im2ship = base64.b64encode(imnbytes)
-snap = Image.open(stream)
-snap.show()
-'''
+base_text = "Basement Vantage Point"
+addendum_motion = "SENSED MOTION"
+addendum_presence = "SENSED PRESENCE"
+addendum_intrusion = "ALERT!!! POSSIBLE INTRUSION!!!"
 
 client = mqtt.Client("Sentry")
+transport_resolution = (224, 224) # Ship images of this size
 
+'''
+Take two snaps in rapid succession for motion detection.
+'''
+def make2takes():
+    '''
+    Takes two snaps with the pi camera and returns classifyable objects
+    for use with classifiers.py and MotionDetector.py only.
+    '''
+    first = Classifyable()
+    second = Classifyable()
+    
+    first.set_snap()
+    second.set_snap()
+    
+    return first, second
+
+def ship_payload(client, sender, subject, b64):
+    payload = json.dumps({"From": sender, 
+                    "Subject": subject, 
+                    "Message": b64.decode('ascii')})
+    client.publish("Surveillance/MainDoor", payload)
+    return payload
 '''
 Specify the callbacks. Use with loop_start() and loop_stop() 
 methods of MQTT client object. 
@@ -46,7 +54,7 @@ def on_connect(client, userdata, flags, rc):
 
 def on_disconnect(client, userdata, rc):
     print("Establishing connection .. ")
-    client.connect("192.168.1.216")
+    client.connect("192.168.1.254")
 
 def on_subscribe(client, userdata, mid, granted_qos):
     print("Subscribed.")
@@ -78,43 +86,44 @@ print("Subscribing to topic {} ..".format("Surveillance/MainDoor"))
 client.subscribe("Surveillance/MainDoor")
 
 tic = time.time()
-delta = 30  # Pause for this duration (in seconds) between updates
+delta = 30  # Pause for this duration (in seconds) between update
+
 while(True):
+    f, s = make2takes()
+
     # Sense motion
+    Sur = MotionDetector(f, s, showme=False)
     base, compare, diff, level, clean, mask, res = Sur.sense()
     flag_motion = True if sum(res.values()) > 4500 else False
 
     # Sense presence
-
+    labs2 = './Assets/labelmap.txt'
+    mod2  = './Assets/detect.tflite'
+    cnet = Coco(labs2, mod2, s)
+    original, drawn, ret = cnet.classify_snap(threshold=0.4)
+    flag_presence = True if dict(ret).get("person") else False
 
     # Set alert
-    subject_line = ''
-    if (flag_motion and flag_presence):
-        subject_line = message_location + " " + message_intrusion
-    elif (flag_motion):
-        subject_line = message_location + " " + message_motion
-    elif (flag_presence):
-        subject_line = message_location + " " + message_presence
-    else:
-        subject_line = message_location
-        
+    subject_line = base_text
+    subject_line += " "
     toc = time.time()
-    if ((toc - tic) > delta) or flag_motion or flag_presence:
-        '''
-        Send an image every delta seconds.
-        '''
-        with picamera.PiCamera() as myCam:
-            myCam.rotation = 180
-            myCam.resolution = (300, 300)
-            myCam.capture(stream, format="jpeg")
-            stream.seek(0)
-            imnbytes = stream.getvalue()
-            im2ship = base64.b64encode(imnbytes)
-            payload = json.dumps({"From": "RPi3", 
-                        "Subject": subject_line, 
-                        "Message": im2ship.decode('ascii')})  # im_encoded
+    if flag_presence:
+        buffered_bytes = BytesIO() # For base64 encoding
+        drawn.resize((transport_resolution)).save(buffered_bytes, 'jpeg')
+        b64 = base64.b64encode(buffered_bytes.getvalue())
+        if flag_motion:
+            subject_line += addendum_intrusion
+        else:
+            subject_line += addendum_presence
+        payload = ship_payload(client, "RPi3", subject_line, b64)     
+    elif flag_motion:
+        subject_line += addendum_motion
+        payload = ship_payload(client, "RPi3", subject_line, s.tobase64enc())
+    elif (toc-tic) > delta:
         tic = toc
-        client.publish("Surveillance/MainDoor", payload)
+        payload = ship_payload(client, "RPi3", subject_line, s.tobase64enc())
+    else:
+        None
 
 time.sleep(6)
 client.loop_stop()

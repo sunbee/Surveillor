@@ -178,7 +178,6 @@ class Coco(BaseCNN):
                 title = "{}: {}%".format(self._labels[int(classes[i])], int(scores[i]*100))
                 snapbb.text(tloc, title, fill="red", font=font, align="left")
 
-        snap_out.show()
         return snap_in, snap_out, results
 
     def classify_snap(self, new=False, threshold=0.45):
