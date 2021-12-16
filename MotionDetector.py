@@ -6,11 +6,13 @@ import matplotlib.pyplot as plt
 import time
 import os
 
+from classifyable import *
+
 class MotionDetector:
-    def __init__(self, width=300, height=300, delta=1, imthreshold=55, regionsize=90, showme=False):
-        self.width = width
-        self.height = height
-        self.delta = delta
+    def __init__(self, base, compare, resolution=(300, 300), imthreshold=55, regionsize=90, showme=False):
+        self.base = base
+        self.compare = compare
+        self.resolution = resolution
         self.threshold = imthreshold
         self.size = regionsize
         self.regions = {}
@@ -20,28 +22,8 @@ class MotionDetector:
     def __str__(self) -> str:
         1
 
-    def _take_motion_snap(self):
-        width = self.width
-        height = self.height
-        with PiCamera() as Eye:
-            time.sleep(1)
-            Eye.resolution = (width, height)
-            Eye.rotation = 180
-            with array.PiRGBArray(camera=Eye) as Stream:
-                Eye.exposure_mode = 'auto'
-                Eye.awb_mode = 'auto'
-                Eye.capture(Stream, format='rgb')
-                return Stream.array
-
-    def _take_two_motion(self):
-        intervalsec = self.delta
-        im_one = self._take_motion_snap()
-        tic = time.time()
-        toc = tic
-        while (toc - tic) < intervalsec:
-            toc = time.time()
-        im_two = self._take_motion_snap()
-        return (im_one, im_two, np.subtract(im_two, im_one))
+    def _take_diff(self):
+        return np.subtract(self.base.toarray(), self.compare.toarray())
 
     def _threshold_difference(self, imdiff):
         imthreshold = self.threshold
@@ -130,7 +112,7 @@ class MotionDetector:
         self.results = results
 
     def sense(self):
-        imone, imtwo, imdiff = self._take_two_motion()
+        imdiff = self._take_diff()
         imlevel = self._threshold_difference(imdiff=imdiff)
         imbnw = self._erode_dilate(snap=Image.fromarray(imlevel))
         mask = self.find_connected_components(imbnw=imbnw)
@@ -150,15 +132,15 @@ class MotionDetector:
                 axarray[idx].set_yticks([])
                 axarray[idx].set_title(labels[idx], fontdict=font)
 
-            axarray[0, 0].imshow(imone)
-            axarray[0, 1].imshow(imtwo)
+            axarray[0, 0].imshow(self.base)
+            axarray[0, 1].imshow(self.compare)
             axarray[1, 0].imshow(imdiff)
             axarray[1, 1].imshow(imlevel)
             axarray[2, 0].imshow(imbnw)
             axarray[2, 1].imshow(mask)
             plt.show()
 
-        return (imone, imtwo, imdiff, imlevel, imbnw, mask, self.results)
+        return (self.base, self.compare, imdiff, imlevel, imbnw, mask, self.results)
 
 
     
