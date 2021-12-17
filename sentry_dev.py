@@ -14,10 +14,7 @@ flag_motion = False
 flag_presence = False
 flag_intrusion = flag_motion and flag_presence
 
-base_text = "Basement Vantage Point"
-addendum_motion = "SENSED MOTION"
-addendum_presence = "SENSED PRESENCE"
-addendum_intrusion = "ALERT!!! POSSIBLE INTRUSION!!!"
+Subject = "Basement Vantage Point"
 
 client = mqtt.Client("Sentry")
 transport_resolution = (224, 224) # Ship images of this size
@@ -38,10 +35,13 @@ def make2takes():
     
     return first, second
 
-def ship_payload(client, sender, subject, b64):
+def ship_payload(client, b64, sender, subject, flag_motion, flag_presence):
     payload = json.dumps({"From": sender, 
                     "Subject": subject, 
-                    "Message": b64.decode('ascii')})
+                    "Message": b64.decode('ascii'),
+                    "Motion": flag_motion,
+                    "Presence": flag_presence
+                    })
     client.publish("Surveillance/MainDoor", payload)
     return payload
 '''
@@ -86,10 +86,11 @@ print("Subscribing to topic {} ..".format("Surveillance/MainDoor"))
 client.subscribe("Surveillance/MainDoor")
 
 tic = time.time()
-delta = 30  # Pause for this duration (in seconds) between update
+delta = 60  # Pause for this duration (in seconds) between update
 
 while(True):
     f, s = make2takes()
+    b64 = s.tobase64enc()
 
     # Sense motion
     Sur = MotionDetector(f, s, showme=False)
@@ -100,28 +101,19 @@ while(True):
     labs2 = './Assets/labelmap.txt'
     mod2  = './Assets/detect.tflite'
     cnet = Coco(labs2, mod2, s)
-    original, drawn, ret = cnet.classify_snap(threshold=0.4)
+    original, drawn, ret = cnet.classify_snap(threshold=0.6)
     flag_presence = True if dict(ret).get("person") else False
 
     # Set alert
-    subject_line = base_text
-    subject_line += " "
     toc = time.time()
-    if flag_presence:
+    if flag_presence or flag_motion:
         buffered_bytes = BytesIO() # For base64 encoding
         drawn.resize((transport_resolution)).save(buffered_bytes, 'jpeg')
         b64 = base64.b64encode(buffered_bytes.getvalue())
-        if flag_motion:
-            subject_line += addendum_intrusion
-        else:
-            subject_line += addendum_presence
-        payload = ship_payload(client, "RPi3", subject_line, b64)     
-    elif flag_motion:
-        subject_line += addendum_motion
-        payload = ship_payload(client, "RPi3", subject_line, s.tobase64enc())
+        payload = ship_payload(client, b64, "RPi3", Subject, flag_motion, flag_presence)
     elif (toc-tic) > delta:
         tic = toc
-        payload = ship_payload(client, "RPi3", subject_line, s.tobase64enc())
+        payload = ship_payload(client, b64, "RPi3", Subject, flag_motion, flag_presence)
     else:
         None
 
