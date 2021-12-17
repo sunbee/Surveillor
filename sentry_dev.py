@@ -101,7 +101,7 @@ while(True):
     labs2 = './Assets/labelmap.txt'
     mod2  = './Assets/detect.tflite'
     cnet = Coco(labs2, mod2, s)
-    original, drawn, ret = cnet.classify_snap(threshold=0.6)
+    original, drawn, ret = cnet.classify_snap(threshold=0.5)
     flag_presence = True if dict(ret).get("person") else False
 
     # Set alert
