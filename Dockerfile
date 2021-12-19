@@ -1,14 +1,11 @@
-FROM resin/rpi-raspbian:jessie
+FROM arm32v7/python:3.7.10-buster
 
-RUN apt-get update \
-    && apt-get install -y \
-        python3 \
-        python3-pip \
-        build-essential \
-        python3-dev \
-        zlib1g-dev \
-        libjpeg-dev \
-        wget \
-    && pip3 install --upgrade pip \
-    && pip install --upgrade setuptools 
+WORKDIR /app
+COPY requirements.txt .
+
+RUN pip install -r requirements.txt
+
+COPY . /app
+
+
 
