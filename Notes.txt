@@ -1,0 +1,80 @@
+1. Make a docker image with dockerfile with base
+
+Image: sentry
+Base: arm32v7/python:3.7.10-buster
+Manifest: requirements.txt containing numpy, paho-mqtt, picamera, Pillow, matplotlib
+Command: docker build -t sentry .
+
+Some components could not be installed via requirements, e.g. matplotlib and the TensorflowLite runtime. Hence 2.
+
+2. Install missing components.
+
+- Launch container from image like so: docker run -it --name sentry37 sentry
+- Install matplotlib like so: pip install matplotlib==3.0.2
+- Install TensorflowLite runtime like so: pip install /path/to/*.whl
+
+Now we have a container with all the ingredients. To verify, launch the Python interpreter and execute import commands. 
+All except picamera will work. Let's create an intermediate image, sentryimage, to modify further.
+
+3. Build new image from container
+
+Image: sentryimage
+Container: sentry37 (container) with matplotlib and TensorflowLite runtime installed.
+Command: docker commit sentry37 sentryimage
+
+For picamera, some changes in host configuration are required. Let's proceed to make those.
+
+4. Make changes to host
+
+- Grant access to users outside the "video" group of which user "pi" is a member
+- Create the file: /etc/udev/rules.d/99-camera.rules 
+- with line: SUBSYSTEM=="vchiq",MODE="0666"
+
+5. Create container
+
+Container: sentrycam
+Image: sentryimage
+Command: docker run -it --name sentrycam --env LD_LIBRARY_PATH=/opt/vc/lib --device /dev/vchiq  -v /opt/vc:/opt/vc sentryimage
+Compare: docker run --privileged=true -v /opt/vc:/opt/vc --env LD_LIBRARY_PATH=/opt/vc/lib --device /dev/vchiq -it sentryimage
+
+Now, with container running, lauch interactive shell and run the following command to create an environment variable: 
+echo READTHEDOCS=True >> /etc/environment
+
+Alt.
+
+1. Create image from dockerfile.
+
+Adapt as follows:
+- Set environment variable in the Dockerfile.
+- Install matplotlib by running pip command in Dockerfile instead of including in requirements manifest.
+- Install TensorflowLite runtime from pip command with wheel file from copied-over files in app folder.
+
+Call image sentry2. Now docker container from this image will have all pre-reqs for surveillance node satisfied incl. picamera 
+and TensorflowLite runtime. 
+
+2. Launch container: 
+
+Container: sentrycam2
+Image: sentry2
+Command: docker run --name sentrycam2 --privileged=true -v /opt/vc:/opt/vc --env LD_LIBRARY_PATH=/opt/vc/lib --device /dev/vchiq -it sentry2
+
+3. Make changes
+
+- Create config.py with credentials (uid/pwd) for MQTT connection and other configurable parameters
+- Modify main program (sentry_dev.py) to import config and make authenticated requests to MQTT broker with credentials
+- Launch dockerized app in interactive shell and test operation.
+
+Pictures should flow to the Node-RED dashboard.
+
+NEXT:
+1. docker commit the updated container to image sentry2:config,
+keeping same name but different tag? This to avoid proliferation.
+2. launch container using docker-compose and replace config.py with
+environment variables set in the YAML. Also, plug in the picamera-
+related shared volume and environment variables via YAML.
+3. Note that so far, Dockerfile has no entrypoint. Either rebuild from
+updated Dockerfile with the change or pass entrypoint via YAML.
+
+
+
+
