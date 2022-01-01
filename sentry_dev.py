@@ -6,6 +6,7 @@ import io
 from PIL import Image
 import picamera
 
+import config
 from classifiers import *
 from classifyable import *
 from MotionDetector import MotionDetector
@@ -54,7 +55,7 @@ def on_connect(client, userdata, flags, rc):
 
 def on_disconnect(client, userdata, rc):
     print("Establishing connection .. ")
-    client.connect("192.168.1.254")
+    client.connect(config.ipaddress)
 
 def on_subscribe(client, userdata, mid, granted_qos):
     print("Subscribed.")
@@ -78,7 +79,8 @@ client.on_publish = on_publish
 client.on_message = on_message
 
 print("Establishing connection .. ")
-client.connect("192.168.1.254")
+client.username_pw_set(config.uid, config.pwd)
+client.connect(config.ipaddress)
 
 client.loop_start()  # Start the thread to listen for events and trigger callbacks
 
