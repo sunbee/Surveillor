@@ -1,4 +1,12 @@
-1. Make a docker image with dockerfile with base
+PART A
+
+[Image: arm32v7/..] -> Dockerfile 
+-> [Image: sentry] -> docker run 
+-> [Container: sentry37] -> mod & docker commit 
+-> [Image: sentryimage] -> docker run with env, vol, dev 
+-> [Container: sentrycam]
+ 
+A.1. Make a docker image with dockerfile with base
 
 Image: sentry
 Base: arm32v7/python:3.7.10-buster
@@ -7,7 +15,7 @@ Command: docker build -t sentry .
 
 Some components could not be installed via requirements, e.g. matplotlib and the TensorflowLite runtime. Hence 2.
 
-2. Install missing components.
+A.2. Install missing components.
 
 - Launch container from image like so: docker run -it --name sentry37 sentry
 - Install matplotlib like so: pip install matplotlib==3.0.2
@@ -16,7 +24,7 @@ Some components could not be installed via requirements, e.g. matplotlib and the
 Now we have a container with all the ingredients. To verify, launch the Python interpreter and execute import commands. 
 All except picamera will work. Let's create an intermediate image, sentryimage, to modify further.
 
-3. Build new image from container
+A.3. Build new image from container
 
 Image: sentryimage
 Container: sentry37 (container) with matplotlib and TensorflowLite runtime installed.
@@ -24,13 +32,13 @@ Command: docker commit sentry37 sentryimage
 
 For picamera, some changes in host configuration are required. Let's proceed to make those.
 
-4. Make changes to host
+A.4. Make changes to host
 
 - Grant access to users outside the "video" group of which user "pi" is a member
 - Create the file: /etc/udev/rules.d/99-camera.rules 
 - with line: SUBSYSTEM=="vchiq",MODE="0666"
 
-5. Create container
+A.5. Create container
 
 Container: sentrycam
 Image: sentryimage
@@ -42,7 +50,15 @@ echo READTHEDOCS=True >> /etc/environment
 
 Alt.
 
-1. Create image from dockerfile.
+PART B
+
+[Image: arm32v7/..] -> Dockerfile w dual install  
+-> [Image: sentry2] -> docker run with env, vol, dev (works!) & mod (experimental config.py)
+-> [Container: sentrycam2] -> docker commit
+-> [Image: sentry2:configurable] -> docker run with env, vol, dev
+-> [Container: ephemeral container]
+
+B.1. Create image from dockerfile.
 
 Adapt as follows:
 - Set environment variable in the Dockerfile.
@@ -52,13 +68,13 @@ Adapt as follows:
 Call image sentry2. Now docker container from this image will have all pre-reqs for surveillance node satisfied incl. picamera 
 and TensorflowLite runtime. 
 
-2. Launch container: 
+B.2. Launch container: 
 
 Container: sentrycam2
 Image: sentry2
 Command: docker run --name sentrycam2 --privileged=true -v /opt/vc:/opt/vc --env LD_LIBRARY_PATH=/opt/vc/lib --device /dev/vchiq -it sentry2
 
-3. Make changes
+B.3. Make changes
 
 - Create config.py with credentials (uid/pwd) for MQTT connection and other configurable parameters
 - Modify main program (sentry_dev.py) to import config and make authenticated requests to MQTT broker with credentials
@@ -66,34 +82,42 @@ Command: docker run --name sentrycam2 --privileged=true -v /opt/vc:/opt/vc --env
 
 Pictures should flow to the Node-RED dashboard.
 
-NEXT:
-1. docker commit the updated container to image sentry2:config,
-keeping same name but different tag? This to avoid proliferation.
-2. launch container using docker-compose and replace config.py with
-environment variables set in the YAML. Also, plug in the picamera-
-related shared volume and environment variables via YAML.
-3. Note that so far, Dockerfile has no entrypoint. Either rebuild from
-updated Dockerfile with the change or pass entrypoint via YAML.
-
 Ultimately, we want a two-step process as follows:
 1. Create image using docker-file with app code and all dependencies
 2. Create docker containter from image with docker-compose, providing host resources
 
-Notes:
-1. Create an image like so:
+PART C
+
+[Image: arm32v7/..] -> Dockerfile w dual install  
+-> [Image: sentry2:envenabled] -> docker run 
+-> [Container: sentrycam21] -> docker run with env, vol, dev
+
+FINAL CUT:
+C.1. Build the image from Dockerfile
+- Image: sentry2:envenabled 
+- Dockerfile (with entrypoint)
+
+C.2. Test the app passing env variables, volumes and devices
+docker run --name nonamenow --rm --env USERID=admin --env PASSWD='Shakt!6Sh!va9' --env MQTTIP='192.168.1.219' --env DELTA=60 --privileged=true -v /opt/vc:/opt/vc --env LD_LIBRARY_PATH=/opt/vc/lib --device /dev/vchiq -it sentry2:envenabled
+
+C.3. Create the container from image
+- Container: sentrycam21
+- docker-compose (with env, vol, dev)
+
+
+HOW TO
+1. HOW TI create an image from a container? Example:
 - Image: sentry:configurable
 - Container: sentrycam2
 - Command: docker commit sentrycam2 sentry:configurable
 
-The container can be started and running. The image label has two parts - repository (sentry) and tag (configurable). 
+The container can be running. The image label has two parts - repository (sentry) and tag (configurable). 
 You can add images to the same repository with new tags.
 
-2. Remove a docker image like so: docker rmi sentry:configurable
+2. HOW TO remove a docker image? Example: docker rmi sentry:configurable
 
-3. Export env variables on Mac temporarily like so: 
+3. HOW TO export env variables on Mac temporarily? Example: 
 - Create: export DELTA=300
 - View: echo $DELTA
-
-
 
 

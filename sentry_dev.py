@@ -13,8 +13,9 @@ from MotionDetector import MotionDetector
 
 uid = os.getenv("USERID")
 pwd = os.getenv("PASSWD")
-ipaddress = os.getenv("MQTTIP")
-delta = os.getenv("DELTA")
+ipaddress = os.getenv("MQTTIP", "192.168.1.219")
+delta = float(os.getenv("DELTA", 60))
+topic = os.getenv("TOPIC", "Surveillance/MainDoor")
 
 flag_motion = False
 flag_presence = False
@@ -48,7 +49,7 @@ def ship_payload(client, b64, sender, subject, flag_motion, flag_presence):
                     "Motion": flag_motion,
                     "Presence": flag_presence
                     })
-    client.publish("Surveillance/MainDoor", payload)
+    client.publish(topic, payload)
     return payload
 '''
 Specify the callbacks. Use with loop_start() and loop_stop() 
@@ -84,14 +85,14 @@ client.on_subscribe = on_subscribe
 client.on_publish = on_publish
 client.on_message = on_message
 
-print("Establishing connection .. ")
+print("Establishing connection .. {}".format(ipaddress))
 client.username_pw_set(uid, pwd)
 client.connect(ipaddress)
 
 client.loop_start()  # Start the thread to listen for events and trigger callbacks
 
-print("Subscribing to topic {} ..".format("Surveillance/MainDoor"))
-client.subscribe("Surveillance/MainDoor")
+print("Subscribing to topic {} ..".format(topic))
+client.subscribe(topic)
 
 tic = time.time()
 

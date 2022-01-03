@@ -1,13 +1,20 @@
-version: '3'
+version: '3.6'
 
 services:
-  name: sentry21
   app:
-    image: sentry2:configurable
-  environment:
-    privileged=true
-    LD_LIBRARY_PATH=/opt/vc/lib
-  device:
-    /dev/vchi
-  volumes:
-    /opt/vc:/opt/vc
+    build: .
+    container_name: sentrycam21
+    image: sentry2:envenabled
+    restart: always
+    privileged: true
+    environment:
+    - LD_LIBRARY_PATH=/opt/vc/lib
+    - USERID=admin
+    - "PASSWD=yourpasswordhere!"
+    - "MQTTIP=192.168.1.219"
+    - DELTA=90
+    - TOPIC=Surveillance/MainDoor
+    volumes:
+    - /opt/vc:/opt/vc
+    devices: 
+    - "/dev/vchiq:/dev/vchiq"
