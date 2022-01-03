@@ -55,6 +55,7 @@ def on_connect(client, userdata, flags, rc):
 
 def on_disconnect(client, userdata, rc):
     print("Establishing connection .. ")
+    client.username_pw_set(config.uid, config.pwd)
     client.connect(config.ipaddress)
 
 def on_subscribe(client, userdata, mid, granted_qos):
