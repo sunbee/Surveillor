@@ -96,6 +96,7 @@ FINAL CUT:
 C.1. Build the image from Dockerfile
 - Image: sentry2:envenabled 
 - Dockerfile (with entrypoint)
+- Command: docker build -t sentry2:envenabled .
 
 C.2. Test the app passing env variables, volumes and devices
 docker run --name nonamenow --rm --env USERID=admin --env PASSWD='Shakt!6Sh!va9' --env MQTTIP='192.168.1.219' --env DELTA=60 --privileged=true -v /opt/vc:/opt/vc --env LD_LIBRARY_PATH=/opt/vc/lib --device /dev/vchiq -it sentry2:envenabled
@@ -103,6 +104,7 @@ docker run --name nonamenow --rm --env USERID=admin --env PASSWD='Shakt!6Sh!va9'
 C.3. Create the container from image
 - Container: sentrycam21
 - docker-compose (with env, vol, dev)
+- Command: docker-compose up
 
 
 HOW TO

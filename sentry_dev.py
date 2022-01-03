@@ -124,6 +124,6 @@ while(True):
         payload = ship_payload(client, b64, "RPi3", Subject, flag_motion, flag_presence)
     else:
         None
+    time.sleep(6)
 
-time.sleep(6)
 client.loop_stop()
