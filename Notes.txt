@@ -79,6 +79,20 @@ Ultimately, we want a two-step process as follows:
 1. Create image using docker-file with app code and all dependencies
 2. Create docker containter from image with docker-compose, providing host resources
 
+Notes:
+1. Create an image like so:
+- Image: sentry:configurable
+- Container: sentrycam2
+- Command: docker commit sentrycam2 sentry:configurable
+
+The container can be started and running. The image label has two parts - repository (sentry) and tag (configurable). 
+You can add images to the same repository with new tags.
+
+2. Remove a docker image like so: docker rmi sentry:configurable
+
+3. Export env variables on Mac temporarily like so: 
+- Create: export DELTA=300
+- View: echo $DELTA
 
 
 
