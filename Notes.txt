@@ -75,6 +75,11 @@ related shared volume and environment variables via YAML.
 3. Note that so far, Dockerfile has no entrypoint. Either rebuild from
 updated Dockerfile with the change or pass entrypoint via YAML.
 
+Ultimately, we want a two-step process as follows:
+1. Create image using docker-file with app code and all dependencies
+2. Create docker containter from image with docker-compose, providing host resources
+
+
 
 
 
