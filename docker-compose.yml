@@ -1,0 +1,13 @@
+version: '3'
+
+services:
+  name: sentry21
+  app:
+    image: sentry2:configurable
+  environment:
+    privileged=true
+    LD_LIBRARY_PATH=/opt/vc/lib
+  device:
+    /dev/vchi
+  volumes:
+    /opt/vc:/opt/vc

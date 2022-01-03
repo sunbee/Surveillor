@@ -3,13 +3,18 @@ import base64
 import json
 import time
 import io
+import os
 from PIL import Image
 import picamera
 
-import config
 from classifiers import *
 from classifyable import *
 from MotionDetector import MotionDetector
+
+uid = os.getenv("USERID")
+pwd = os.getenv("PASSWD")
+ipaddress = os.getenv("MQTTIP")
+delta = os.getenv("DELTA")
 
 flag_motion = False
 flag_presence = False
@@ -55,8 +60,8 @@ def on_connect(client, userdata, flags, rc):
 
 def on_disconnect(client, userdata, rc):
     print("Establishing connection .. ")
-    client.username_pw_set(config.uid, config.pwd)
-    client.connect(config.ipaddress)
+    client.username_pw_set(uid, pwd)
+    client.connect(ipaddress)
 
 def on_subscribe(client, userdata, mid, granted_qos):
     print("Subscribed.")
@@ -80,8 +85,8 @@ client.on_publish = on_publish
 client.on_message = on_message
 
 print("Establishing connection .. ")
-client.username_pw_set(config.uid, config.pwd)
-client.connect(config.ipaddress)
+client.username_pw_set(uid, pwd)
+client.connect(ipaddress)
 
 client.loop_start()  # Start the thread to listen for events and trigger callbacks
 
@@ -89,7 +94,6 @@ print("Subscribing to topic {} ..".format("Surveillance/MainDoor"))
 client.subscribe("Surveillance/MainDoor")
 
 tic = time.time()
-delta = 60  # Pause for this duration (in seconds) between update
 
 while(True):
     f, s = make2takes()

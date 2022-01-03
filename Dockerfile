@@ -10,5 +10,6 @@ RUN pip install matplotlib==3.0.2
 COPY . /app
 RUN pip install /app/Assets/tflite_runtime-1.14.0-cp37-cp37m-linux_armv7l.whl
 
+CMD ["python3", "/app/sentry_dev.py"]
 
 
