@@ -72,21 +72,19 @@ Specify the callbacks. Use with loop(timeout) method of MQTT client object.
 Ref: http://www.steves-internet-guide.com/mqtt-python-callbacks/
 '''
 def on_connect(client, userdata, flags, rc):
-    print("Connected with result code {}.".format(rc))
+    print("Connected with result code {}!".format(rc))
 
 def on_disconnect(client, userdata, rc):
-    print("Reconnecting .. ")
-    client.username_pw_set(uid, pwd)
-    client.connect(ipaddress)
+    print("Disconnected!")
 
 def on_subscribe(client, userdata, mid, granted_qos):
-    print("Subscribed.")
+    print("Subscribed!")
 
 def on_unsubscribe(client, userdata, mid):
     pass
 
 def on_publish(client, userdata, mid):
-    print("Published payload with id {}.".format(mid))
+    print("Published payload with id {}!".format(mid))
 
 def on_message(client, userdata, message):
     #print("Received message\n{}\non topic {}.".format(str(message.payload.decode('utf-8')), message.topic))
@@ -95,25 +93,19 @@ def on_message(client, userdata, message):
 def on_log(client, userdata, level, buf):
     pass
 
-def connect2broker(cid, ipaddress):
-    client = mqtt.Client(client_id=cid)
-    print("Establishing connection .. {}".format(ipaddress))
-    client.username_pw_set(uid, pwd)
-    client.connect(ipaddress)
-
-    return client
-
 tic = time.time()
 
 while(True):
-    client = connect2broker(cid="Sentry", ipaddress=ipaddress);
-
+    print("Setting up connection to broker at {}".format(ipaddress))
+    client = mqtt.Client(client_id="Sentry")
     client.on_connect = on_connect
     client.on_disconnect = on_disconnect
     client.on_message = on_message
     client.on_publish = on_publish 
     client.on_subscribe = on_subscribe
-    
+    client.username_pw_set(uid, pwd)
+    client.connect(ipaddress)
+ 
     print("Subscribing to topic {} ..".format(topic))
     client.subscribe(topic) 
 
@@ -147,6 +139,6 @@ while(True):
     else:
         None
     
-    client.loop(6)
+    client.loop(3) # All callbacks executed in blocking mode
     client.disconnect()
 
