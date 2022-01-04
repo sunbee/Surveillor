@@ -21,21 +21,26 @@ flag_motion = False
 flag_presence = False
 flag_intrusion = flag_motion and flag_presence
 
-Subject = "Basement Vantage Point"
+'''
+Ref: https://stackoverflow.com/questions/42838221/python-paho-mqtt-loops-persistan-connection-to-broker#42931904
 
+    while True:
+        client = mqtt.Client()
+        client.loop_start()
+        client.message_callback_add('$SYS/broker/load/messages/received/1min', messages_received)
+        client.on_connect = on_connect
+        client.connect("test.mosquitto.org", 1883, 60)
+        sleep(3)
+        client.disconnect()
+        client.loop_stop()
+        sleep(10)
+
+See also: http://www.steves-internet-guide.com/mqtt-clean-sessions-example
+
+CODE FOR PUB-SUB IS IN FOREVER-WHILE LOOP AS SUGGESTED IN STACKOVERFLOW POST.
 '''
-Recommended: http://www.steves-internet-guide.com/mqtt-clean-sessions-example/
-- Set up the client with a persistent connection by providing client id and flagging clean_session as  False 
-- Subscribe with qos as 1 
-- Publish with qos as 0 and flag retain as True 
------ 
-mqttc = mqtt.Client(client_id=client, clean_session=False)
-mqttc.subscribe("highmount/alarm/sheddoor", qos=1)
-mqttc.publish("highmount/alarm/led", payload="red",qos=0, retain=True)
-'''
-client = mqtt.Client(client_id="Sentry", clean_session=False)
+
 transport_resolution = (224, 224) # Ship images of this size
-
 '''
 Take two snaps in rapid succession for motion detection.
 '''
@@ -61,9 +66,9 @@ def ship_payload(client, b64, sender, subject, flag_motion, flag_presence):
                     })
     client.publish(topic=topic, payload=payload, qos=0, retain=True)
     return payload
+
 '''
-Specify the callbacks. Use with loop_start() and loop_stop() 
-methods of MQTT client object. 
+Specify the callbacks. Use with loop(timeout) method of MQTT client object. 
 Ref: http://www.steves-internet-guide.com/mqtt-python-callbacks/
 '''
 def on_connect(client, userdata, flags, rc):
@@ -71,6 +76,8 @@ def on_connect(client, userdata, flags, rc):
 
 def on_disconnect(client, userdata, rc):
     print("Reconnecting .. ")
+    client.username_pw_set(uid, pwd)
+    client.connect(ipaddress)
 
 def on_subscribe(client, userdata, mid, granted_qos):
     print("Subscribed.")
@@ -79,7 +86,7 @@ def on_unsubscribe(client, userdata, mid):
     pass
 
 def on_publish(client, userdata, mid):
-    print("Sent message with id {}.".format(mid))
+    print("Published payload with id {}.".format(mid))
 
 def on_message(client, userdata, message):
     #print("Received message\n{}\non topic {}.".format(str(message.payload.decode('utf-8')), message.topic))
@@ -88,33 +95,39 @@ def on_message(client, userdata, message):
 def on_log(client, userdata, level, buf):
     pass
 
-client.on_connect = on_connect
-client.on_disconnect = on_disconnect
-client.on_subscribe = on_subscribe
-client.on_publish = on_publish
-client.on_message = on_message
+def connect2broker(cid, ipaddress):
+    client = mqtt.Client(client_id=cid)
+    print("Establishing connection .. {}".format(ipaddress))
+    client.username_pw_set(uid, pwd)
+    client.connect(ipaddress)
 
-print("Establishing connection .. {}".format(ipaddress))
-client.username_pw_set(uid, pwd)
-client.connect(ipaddress)
-
-client.loop_start()  # Start the thread to listen for events and trigger callbacks
-
-print("Subscribing to topic {} ..".format(topic))
-client.subscribe(topic, qos=1) # qos=1: Hold for delivery at broker
+    return client
 
 tic = time.time()
 
 while(True):
+    client = connect2broker(cid="Sentry", ipaddress=ipaddress);
+
+    client.on_connect = on_connect
+    client.on_disconnect = on_disconnect
+    client.on_message = on_message
+    client.on_publish = on_publish 
+    client.on_subscribe = on_subscribe
+    
+    print("Subscribing to topic {} ..".format(topic))
+    client.subscribe(topic) 
+
     f, s = make2takes()
     b64 = s.tobase64enc()
 
     # Sense motion
+    print("Sensing motion ..")
     Sur = MotionDetector(f, s, showme=False)
     base, compare, diff, level, clean, mask, res = Sur.sense()
     flag_motion = True if sum(res.values()) > 4500 else False
 
     # Sense presence
+    print("Sensing presence ..")
     labs2 = './Assets/labelmap.txt'
     mod2  = './Assets/detect.tflite'
     cnet = Coco(labs2, mod2, s)
@@ -127,12 +140,13 @@ while(True):
         buffered_bytes = BytesIO() # For base64 encoding
         drawn.resize((transport_resolution)).save(buffered_bytes, 'jpeg')
         b64 = base64.b64encode(buffered_bytes.getvalue())
-        payload = ship_payload(client, b64, "RPi3", Subject, flag_motion, flag_presence)
+        payload = ship_payload(client, b64, "RPi3", "Vantage", flag_motion, flag_presence)
     elif (toc-tic) > delta:
         tic = toc
-        payload = ship_payload(client, b64, "RPi3", Subject, flag_motion, flag_presence)
+        payload = ship_payload(client, b64, "RPi3", "Vantage", flag_motion, flag_presence)
     else:
         None
-    time.sleep(6)
+    
+    client.loop(6)
+    client.disconnect()
 
-client.loop_stop()
