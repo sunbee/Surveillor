@@ -21,7 +21,7 @@ class Classifyable:
                 Eye.capture(Stream, self.format)
                 Stream.seek(0)
                 snap = Image.open(Stream).convert('RGB')
-                return snap
+            return snap
     
     def set_snap(self):
         self.snap = self._take_snap()

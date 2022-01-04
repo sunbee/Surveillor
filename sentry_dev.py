@@ -23,7 +23,7 @@ flag_intrusion = flag_motion and flag_presence
 
 Subject = "Basement Vantage Point"
 
-client = mqtt.Client("Sentry")
+client = mqtt.Client(client_id="Sentry", clean_session=False)
 transport_resolution = (224, 224) # Ship images of this size
 
 '''
@@ -49,7 +49,7 @@ def ship_payload(client, b64, sender, subject, flag_motion, flag_presence):
                     "Motion": flag_motion,
                     "Presence": flag_presence
                     })
-    client.publish(topic, payload)
+    client.publish(topic=topic, payload=payload, qos=0, retain=True)
     return payload
 '''
 Specify the callbacks. Use with loop_start() and loop_stop() 
@@ -74,6 +74,7 @@ def on_publish(client, userdata, mid):
 def on_message(client, userdata, message):
     #print("Received message\n{}\non topic {}.".format(str(message.payload.decode('utf-8')), message.topic))
     print("Received message on topic {}.".format(message.topic))
+
 def on_log(client, userdata, level, buf):
     pass
 
@@ -90,7 +91,7 @@ client.connect(ipaddress)
 client.loop_start()  # Start the thread to listen for events and trigger callbacks
 
 print("Subscribing to topic {} ..".format(topic))
-client.subscribe(topic)
+client.subscribe(topic, qos=1) # qos=1: Hold for delivery at broker
 
 tic = time.time()
 

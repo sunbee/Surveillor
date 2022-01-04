@@ -1,3 +1,22 @@
+Where we landed:
+1. Build image (e.g. sentry2:envenabled) from Dockerfile with 'docker build -t sentry2:envenabled .'
+2. Create container (e.g. sentrycam2) from settings for environment, volumes and devices in YAML with 'docker-compose up'
+3. You can repeat 1+2 upon making changes to codebase. Remember to have valid creds entered in YAML.
+4. If testing in temporary container, remember to export variables to environment, and command as follows:
+docker run --name nonamenow --rm --env USERID=admin --env PASSWD='Shakt!6Sh!va9' --env MQTTIP='192.168.1.219' --env DELTA=60 --privileged=true -v /opt/vc:/opt/vc --env LD_LIBRARY_PATH=/opt/vc/lib --device /dev/vchiq -it sentry2:envenabled
+USERID=admin
+PASSWD='y0urbe$tgue$$'
+MQTTIP=192.168.1.219 
+DELTA=60
+TOPIC=Surveillance/MainDoor
+
+Lessons learned:
+1. About making persistent connection with MQTT broker.
+2. About making sure camera is not shared between processes.
+3. About docker-compose YAML formatting.
+
+Here is the journey.
+
 PART A
 
 [Image: arm32v7/..] -> Dockerfile 
