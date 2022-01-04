@@ -98,6 +98,7 @@ tic = time.time()
 while(True):
     print("Setting up connection to broker at {}".format(ipaddress))
     client = mqtt.Client(client_id="Sentry", clean_session=True)
+    client.loop_start()
     client.on_connect = on_connect
     client.on_disconnect = on_disconnect
     client.on_message = on_message
@@ -139,6 +140,7 @@ while(True):
     else:
         None
     
-    client.loop(3) # All callbacks executed in blocking mode
+    time.sleep(5)
+    client.loop_stop()
     client.disconnect()
 
