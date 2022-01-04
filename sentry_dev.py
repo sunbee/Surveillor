@@ -60,9 +60,7 @@ def on_connect(client, userdata, flags, rc):
     print("Connected with result code {}.".format(rc))
 
 def on_disconnect(client, userdata, rc):
-    print("Establishing connection .. ")
-    client.username_pw_set(uid, pwd)
-    client.connect(ipaddress)
+    print("Reconnecting .. ")
 
 def on_subscribe(client, userdata, mid, granted_qos):
     print("Subscribed.")
