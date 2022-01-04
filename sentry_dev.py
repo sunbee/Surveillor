@@ -97,7 +97,7 @@ tic = time.time()
 
 while(True):
     print("Setting up connection to broker at {}".format(ipaddress))
-    client = mqtt.Client(client_id="Sentry")
+    client = mqtt.Client(client_id="Sentry", clean_session=True)
     client.on_connect = on_connect
     client.on_disconnect = on_disconnect
     client.on_message = on_message
