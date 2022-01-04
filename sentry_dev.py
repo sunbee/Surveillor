@@ -23,6 +23,16 @@ flag_intrusion = flag_motion and flag_presence
 
 Subject = "Basement Vantage Point"
 
+'''
+Recommended: http://www.steves-internet-guide.com/mqtt-clean-sessions-example/
+- Set up the client with a persistent connection by providing client id and flagging clean_session as  False 
+- Subscribe with qos as 1 
+- Publish with qos as 0 and flag retain as True 
+----- 
+mqttc = mqtt.Client(client_id=client, clean_session=False)
+mqttc.subscribe("highmount/alarm/sheddoor", qos=1)
+mqttc.publish("highmount/alarm/led", payload="red",qos=0, retain=True)
+'''
 client = mqtt.Client(client_id="Sentry", clean_session=False)
 transport_resolution = (224, 224) # Ship images of this size
 
