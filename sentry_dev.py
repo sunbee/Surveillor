@@ -21,8 +21,6 @@ flag_motion = False
 flag_presence = False
 flag_intrusion = flag_motion and flag_presence
 
-Subject = "Basement Vantage Point"
-
 '''
 Recommended: http://www.steves-internet-guide.com/mqtt-clean-sessions-example/
 - Set up the client with a persistent connection by providing client id and flagging clean_session as  False 
@@ -98,14 +96,13 @@ print("Establishing connection .. {}".format(ipaddress))
 client.username_pw_set(uid, pwd)
 client.connect(ipaddress)
 
-client.loop_start()  # Start the thread to listen for events and trigger callbacks
-
-print("Subscribing to topic {} ..".format(topic))
-client.subscribe(topic, qos=1) # qos=1: Hold for delivery at broker
-
 tic = time.time()
 
 while(True):
+    client.loop_start()  # Start the thread to listen for events and trigger callbacks
+    print("Subscribing to topic {} ..".format(topic))
+    client.subscribe(topic, qos=1) # qos=1: Hold for delivery at broker
+    
     f, s = make2takes()
     b64 = s.tobase64enc()
 
@@ -127,12 +124,11 @@ while(True):
         buffered_bytes = BytesIO() # For base64 encoding
         drawn.resize((transport_resolution)).save(buffered_bytes, 'jpeg')
         b64 = base64.b64encode(buffered_bytes.getvalue())
-        payload = ship_payload(client, b64, "RPi3", Subject, flag_motion, flag_presence)
+        payload = ship_payload(client, b64, "RPi3", "Alert!", flag_motion, flag_presence)
     elif (toc-tic) > delta:
         tic = toc
-        payload = ship_payload(client, b64, "RPi3", Subject, flag_motion, flag_presence)
+        payload = ship_payload(client, b64, "RPi3", "Vantage", flag_motion, flag_presence)
     else:
         None
+    client.loop_stop()
     time.sleep(6)
-
-client.loop_stop()
