@@ -64,7 +64,7 @@ def ship_payload(client, b64, sender, subject, flag_motion, flag_presence):
                     "Motion": flag_motion,
                     "Presence": flag_presence
                     })
-    client.publish(topic=topic, payload=payload, qos=0, retain=True)
+    client.publish(topic=topic, payload=payload)
     return payload
 
 '''
@@ -98,14 +98,19 @@ tic = time.time()
 while(True):
     print("Setting up connection to broker at {}".format(ipaddress))
     client = mqtt.Client(client_id="Sentry", clean_session=True)
-    client.loop_start()
-    client.on_connect = on_connect
-    client.on_disconnect = on_disconnect
-    client.on_message = on_message
-    client.on_publish = on_publish 
-    client.on_subscribe = on_subscribe
-    client.username_pw_set(uid, pwd)
-    client.connect(ipaddress)
+    try:
+        client.loop_start()
+        client.on_connect = on_connect
+        client.on_disconnect = on_disconnect
+        client.on_message = on_message
+        client.on_publish = on_publish 
+        client.on_subscribe = on_subscribe
+        client.username_pw_set(uid, pwd)
+        client.connect(ipaddress)
+    except:
+        client.loop_stop()
+        client.disconnect()
+        continue
  
     print("Subscribing to topic {} ..".format(topic))
     client.subscribe(topic) 
