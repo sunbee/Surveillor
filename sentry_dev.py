@@ -138,7 +138,7 @@ while(True):
         buffered_bytes = BytesIO() # For base64 encoding
         drawn.resize((transport_resolution)).save(buffered_bytes, 'jpeg')
         b64 = base64.b64encode(buffered_bytes.getvalue())
-        payload = ship_payload(client, b64, "RPi3", "Vantage", flag_motion, flag_presence)
+        payload = ship_payload(client, b64, "RPi3", "ALERT!", flag_motion, flag_presence)
     elif (toc-tic) > delta:
         tic = toc
         payload = ship_payload(client, b64, "RPi3", "Vantage", flag_motion, flag_presence)
