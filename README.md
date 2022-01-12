@@ -24,3 +24,11 @@ And here is a look at some of the "intrusions" that the surveillance system caug
 ![Dim figure](https://user-images.githubusercontent.com/5471571/149209134-7176ec37-6c24-4af2-b8f7-75ccb7ac9183.JPG) | ![Full frontal](https://user-images.githubusercontent.com/5471571/149209147-fdd64b67-2f95-4cc8-81d8-cf8de9600e8a.JPG) | ![Arm only](https://user-images.githubusercontent.com/5471571/149209152-045d79bd-3bc1-448a-ab2f-65d5bbb64692.JPG) 
 ![Shadowy partial figure](https://user-images.githubusercontent.com/5471571/149209157-152fe3a6-b818-4a45-ab0f-1a18ba1ab081.JPG) | ![Backlit figure](https://user-images.githubusercontent.com/5471571/149209168-331f4058-3b94-42ff-9f63-26831f23a469.JPG) | ![Obstructed view](https://user-images.githubusercontent.com/5471571/149209128-e59d0ded-e86f-41ed-92f8-b0e7a9b54a95.JPG)
 
+You can see that the system detects presence even in sub-optimal conditions. I have programmed it to send me a message via Telegram app when this happens. There are two steps to detecting presence, first being detection of motion and second being detection of objects. If the object is a person, then it is called out as presence. I have written modules for motion and object detection as follows:
+1. **MotionDetector.py**: I have implemented a robust algorithm to detect motion and filter out effects of varying light conditions or camera shake. 
+2. **ObjectDetector.py**: I have implemented deep learning using the Tensorflow framework and the Mobilenet Convolutional Neural Network. The classifier here works with an RGB image object. 
+3. **classifiers.py**: I have implemented a common interface to make available multiple deep-learning models to use in object detection. I have included two models for use and others can be added. The implementation loosely follows the *Object Factory* pattern. An object of the class **classifiers** expects an input image as an object of the class **classifyable**.
+4. **classifyable.py**: Following the *Object Factory* pattern for this computer vision application based on deep learning models, I have implemeted this class for feeding imaging input to the algorithm. In different parts of the application, an image is required in a form suitable to the context. This class enables straddling the different forms such an RGB object, a mathematical array or an encoded block of text.
+
+  
+
