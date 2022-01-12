@@ -45,8 +45,15 @@ To understand the implementation, you can refer to the Jupyter notebooks.
 
 ## Deployment
 
+I have dockerized the app for deployment to a surveillance node as follows:
+1. Create an image with Dockerfile, starting with base image that has Python 3.7 for Buster and adding other packages for Python.
+2. Create a container using docker-compose YAML, using the image from 1. and provisioning resources including environment variables, shared storage and host devices. 
+
+Accessing the pi camera from inside a docker container requires some set up on the host to modify permissions and some resource-sharing via YAML.
 
 ## Lessons Learned
+
+
 
 
 
