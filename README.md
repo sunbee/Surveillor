@@ -5,6 +5,9 @@ I have built a DIY Home Automation system as an Internet of Things (IoT). The be
 
 The surveillance system is a subsystem within this system. It has surveillance units, each of which is an older-model Raspberry Pi equipped with pi camera. The unit surveils a zone around the house continously, looking for motion or presence, and sending footage to the hub at a regular frequency. At the hub, payloads are ingested, processed and presented as surveillance footage in a dashboard on a web-site. 
 
+Here is a look at the web-site:
+<img width="1440" alt="HomeAutomation_Dash" src="https://user-images.githubusercontent.com/5471571/149216914-5dfda87c-0dc0-4054-a960-321b07ae4fb7.png">
+
 I have used an IoT Stack with the following software, each running as a service in a docker container.
 1. **Mosquitto MQTT** for networking nodes with the hub in a pub-sub model. The hub hosts an MQTT broker. Each node has an MQTT client installed. MQTT is a protocol for wireless communications over WiFi. 
 2. **Node-RED** for ETL'ing. ETL stands for data operations extract, transform and load. Node-RED is often described as a "low code" programming tool where the developer builds an app from code blocks that are organized in various drawers according to function. The developer drags and drops the code blocks on to a coding canvas and then wires them together to create a flow. A message payloads flows through the wire and is updated with processing at each code block. This makes flow of information transparent and programs are easy to create. And although Node-Red is described as "low code", it runs Node.js under the hood, making the powerful features of this javascript-based programming language available to the programmer.
@@ -12,9 +15,6 @@ I have used an IoT Stack with the following software, each running as a service 
 4. **Grafana** as the presentation layer.
 
 Of these, 1 and 2 are relevant to the Surveillance sub-system. I have found use for 3 and 4 in my automated hydroponic growout. Each software runs as a service in a docker container. This is important because it means I do not need to back up the software, only the application data which has a much smaller footprint. In the eventuality that restoring software becomes necessary, it is a simple step of pulling docker images from a repository and spinning up containers, which takes only a few minutes and is dependable, as opposed to reinstalling software which is time-consuming and often throws up surprises. 
-
-Here is a look at the web-site:
-<img width="1440" alt="HomeAutomation_Dash" src="https://user-images.githubusercontent.com/5471571/149216914-5dfda87c-0dc0-4054-a960-321b07ae4fb7.png">
 
 And here is a look at some of the "intrusions" that the surveillance system caught, including a very cute offender :)
 
