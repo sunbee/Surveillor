@@ -31,7 +31,7 @@ And here is a look at some of the "intrusions" that the surveillance system caug
 
 You can see that the system detects presence even in sub-optimal conditions. I have programmed it to send me a message via Telegram app when this happens. 
 
-## Classes
+## Python Classes
 
 There are two steps to detecting presence, first being detection of motion and second being detection of objects. If the object is a person, then it is called out as presence. I have written modules for motion and object detection as follows:
 1. **MotionDetector.py**: I have implemented a robust algorithm to detect motion and filter out effects of varying light conditions or camera shake. 
