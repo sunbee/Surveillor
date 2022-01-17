@@ -69,8 +69,15 @@ Often, what appears easy at the start of a project turns out to be difficult, an
 - In subsequent iterations, I tried installing the remaining libraries manually by launching an interactive shell with the docker container and debugging installation process from within. With successul installation in this way, I had more options - to create an intermediate image from the running container instance using `docker commit` or updating the dockerfile and including `pip install` commands. I tried both and found the latter approach simpler and opted for that.
 - Success! I now had all pre-requisite libraries installed, some via the requirements manifest, others via Python's 'pip' installer and one from the downloaded 'whl' file in the app folder. What remained was to add the entry-point to the dockerfile to start the app everytime the container was spun up.
 2. Having deployed the app, I found it would run for a while and then freeze. Curious, I looked up the resources used by the app and found that while the memory usage was a reasonable 5% - 6%, CPU usage was nearly 90%. My app was taking up almost all of the CPU's computing power. in hindsight, this wasn't surprising since the app has a 'forever-while loop' where it takes snaps, detects motion, detects presence, packs the annotated image in a payload and ships it to the Home Automation hub. This cycle of events happens over and over and naturally took up (nearly) all available computing cycles. The solution was to put a small delay in the while loop, even as little as 1 second. This small change brough the CPU usage to under 50% from near 90%.
-
-
+3. The MQTT connection between client and broker must be stable over weeks and months. Initially, I observed issues with the stability of the connection. The connection would break and not resume even though I had programmed it to reconnect upon disconnecting. Fixing this issue required diving deeper into the mechanics of MQTT and understanding details such as:
+- The difference between a persistent connection and non-persistent connection.
+- The effect of paramters such as Quality of Service (QoS) and retention policies on client and broker.
+- The event loop and how callbacks were handled.
+With this research and conclusions from designed experiments, I found the only way to have a stable connection was as follows:
+- Connect in non-persistent manner, connecting at the start of each iteration of the forever-while loop and disconnected towards the end after shipping payload.
+- Start the event-loop after making a connection and stop it just before disconnecting. Do not include code to connect upon disconnecting as the loop takes care of that when the need arises.
+- Put the code for making connection, registering callbacks to events and starting the event-loop in a try-catch block so the program can continue in case any of those steps fails for transient reasons.
+With these changes, I now have a dependable connection.
 
 
 
