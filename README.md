@@ -73,10 +73,12 @@ Often, what appears easy at the start of a project turns out to be difficult, an
     - The difference between a persistent connection and non-persistent connection.
     - The effect of paramters such as Quality of Service (QoS) and retention policies on client and broker.
     - The event loop and how callbacks were handled.
+
 With this research and conclusions from designed experiments, I found the only way to have a stable connection was as follows:
     - Connect in non-persistent manner, connecting at the start of each iteration of the forever-while loop and disconnected towards the end after shipping payload.
     - Start the event-loop after making a connection and stop it just before disconnecting. Do not include code to connect upon disconnecting as the loop takes care of that when the need arises.
     - Put the code for making connection, registering callbacks to events and starting the event-loop in a try-catch block so the program can continue in case any of those steps fails for transient reasons.
+
 With these changes, I now have a dependable connection.
 
 
