@@ -7,7 +7,8 @@ I have built a DIY Home Automation system as an Internet of Things (IoT). The be
 The surveillance system is a subsystem within this system. It has surveillance units, each of which is an older-model Raspberry Pi equipped with pi camera. The unit surveils a zone around the house continuously, looking for motion or presence, and sending footage to the hub at a regular frequency. At the hub, payloads are ingested, processed and presented as surveillance footage in a dashboard on a web-site. 
 
 Here is a look at the web-site:
-<img width="1440" alt="HomeAutomation_Dash" src="https://user-images.githubusercontent.com/5471571/149216914-5dfda87c-0dc0-4054-a960-321b07ae4fb7.png">
+
+<img width="1384" alt="dashnr2" src="https://user-images.githubusercontent.com/5471571/150045736-46f4c663-e754-493d-b84e-d4b1bf379191.png">
 
 ## IoT Stack
 
