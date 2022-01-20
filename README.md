@@ -27,8 +27,14 @@ And here is a look at some of the "intrusions" that the surveillance system caug
 --| --| --
 ![Cutie pie](https://user-images.githubusercontent.com/5471571/149209114-507098d3-0338-4a5a-97da-b2640acf808e.JPG) | ![Hand partial](https://user-images.githubusercontent.com/5471571/149209120-e4913357-4463-4435-b871-49fbcd6c347a.JPG) | ![Hand blocking](https://user-images.githubusercontent.com/5471571/149209128-e59d0ded-e86f-41ed-92f8-b0e7a9b54a95.JPG)
 ![Dim figure](https://user-images.githubusercontent.com/5471571/149209134-7176ec37-6c24-4af2-b8f7-75ccb7ac9183.JPG) | ![Full frontal](https://user-images.githubusercontent.com/5471571/149209147-fdd64b67-2f95-4cc8-81d8-cf8de9600e8a.JPG) | ![Arm only](https://user-images.githubusercontent.com/5471571/149209152-045d79bd-3bc1-448a-ab2f-65d5bbb64692.JPG) 
-![Shadowy partial figure](https://user-images.githubusercontent.com/5471571/149209157-152fe3a6-b818-4a45-ab0f-1a18ba1ab081.JPG) | ![Backlit figure](https://user-images.githubusercontent.com/5471571/149209168-331f4058-3b94-42ff-9f63-26831f23a469.JPG) | ![DynamicDuo](https://user-images.githubusercontent.com/5471571/149209134-7176ec37-6c24-4af2-b8f7-75ccb7ac9183.JPG)
-![FleetFooted](https://user-images.githubusercontent.com/5471571/149209147-fdd64b67-2f95-4cc8-81d8-cf8de9600e8a.JPG) | ![NinjaStyle](https://user-images.githubusercontent.com/5471571/149209152-045d79bd-3bc1-448a-ab2f-65d5bbb64692.JPG) | ![FluidMotion](https://user-images.githubusercontent.com/5471571/150394284-035eb50b-cc90-4d12-9ec1-07988e806872.JPG)
+![Shadowy partial figure](https://user-images.githubusercontent.com/5471571/149209157-152fe3a6-b818-4a45-ab0f-1a18ba1ab081.JPG) | ![Backlit figure](https://user-images.githubusercontent.com/5471571/149209168-331f4058-3b94-42ff-9f63-26831f23a469.JPG) | 
+![SurveillorDancing](https://user-images.githubusercontent.com/5471571/150394284-035eb50b-cc90-4d12-9ec1-07988e806872.JPG)
+![SurveillorNinja](https://user-images.githubusercontent.com/5471571/150394274-9edf4598-c9bb-4faa-a8d1-b59145605d73.JPG) | ![SurveillorFleetfoot](https://user-images.githubusercontent.com/5471571/150394254-0befa813-0a4c-405a-9dba-0ebb467b88a9.JPG) | ![SurveillorUs2](https://user-images.githubusercontent.com/5471571/150394234-91057a54-1c2a-4e8f-a0e2-56c198f12a6e.JPG)
+
+![SurveillorPartialHip](https://user-images.githubusercontent.com/5471571/150395435-67d9fef9-9f8c-4ec1-9c1f-5aa595fc6ea3.jpeg)
+![SurveillorBacklitSlim](https://user-images.githubusercontent.com/5471571/150395585-6a15704d-9637-4b61-8dae-3b08eb17183c.jpeg)
+
+
 
 You can see that the system detects presence even in sub-optimal conditions. I have programmed it to send me a message via Telegram app when this happens. 
 
